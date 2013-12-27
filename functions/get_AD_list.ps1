@@ -16,6 +16,12 @@ Fixed the group output.
 Made search_ad function and commented out stuff from get_ad_list function.
 0.7
 Created functions for gathering the properties, one function for each type.
+0.8
+Added PsObjects to the user and computer functions.
+0.9
+Made the user email addressses and groupMembers a big string for easier export.
+Might think about just having a 'make_pretty' function to go through and 'fix'
+string arrays.
 
 .References
 http://msdn.microsoft.com/en-us/library/system.directoryservices.directorysearcher.aspx
@@ -26,8 +32,9 @@ http://blogs.technet.com/b/heyscriptingguy/archive/2006/11/09/how-can-i-use-wind
 Gets a list of all the computers/users/etc in the current domain and returns them.
 
 .Todo
-Functionize get users in group(s)
-Fix get_user_properties and gather more than just 'SamAccountName'.
+Think of making it 'look better' maybe a 'make_pretty' function.
+Perhaps use $object.psobject.typename.insert(0,"TypeName") and then check that on make_pretty.
+I'd also have to add that to the PsObject before I return it from get_X_properties function.
 
 .Example
 get_ad_list -type user -file csv #This outputs a $date_user.csv file.
@@ -53,6 +60,9 @@ Param(
     return $list #this returns an array of type 'SearchResult'
 }
 
+function make_pretty { #this is just here to remind me to do this.
+}
+
 function get_user_properties {
 Param(        
         [Parameter(Mandatory=$true, 
@@ -62,9 +72,6 @@ Param(
         [ValidateNotNullOrEmpty()]         
 	    $list
 )
-$results = $list | select @{n="UserName";e={$_.Properties.samaccountname}}
-$results = $results | Where-Object {$_.UserName -ne $null} #TODO don't ignore accounts with no SamAccountName
-#Here goes the re-write of this:
 $results =  @() #array fro results
 foreach ($u in $list) {
     $props = $u.properties
@@ -73,8 +80,14 @@ foreach ($u in $list) {
         DisplayName = [string]$props.displayname
         EmailAddresses = [string[]]$props.proxyaddresses
         LastLogin = [datetime]::FromFileTime($($props.lastlogontimestamp)).ToString('MM-dd-yy')
-        Description = $props.description
-    }
+        Description = [string]$props.description
+    }    
+    #loads of fun in this fucker. So because of the way PS handles strings and string arrays,
+    #this is the best way I know of to make it one big `n deliminated string
+    foreach ($m in $resList.EmailAddresses) {       
+        if ($resList.EmailAddresses -is [system.array]) { $resList.EmailAddresses  = [string]"$m`n" }
+        else {$resList.EmailAddresses = $resList.EmailAddresses + "$m`n"}
+    } 
     $results += $resList
 }
 
@@ -87,12 +100,22 @@ Param(
                     ValueFromPipeline=$false,                    
                     Position=0)]
         [ValidateNotNull()]
-        [ValidateNotNullOrEmpty()]        
-        #[ValidateSet("computer","user","group")]
-        #[Alias("p1")] 
+        [ValidateNotNullOrEmpty()] 
 	    $list
 )
-$results = $list | select @{n="Computer";e={$_.Properties.name}}
+
+$results =  @() #array fro results
+foreach ($c in $list) {
+    $props = $c.properties
+    $resList = New-Object PsObject -Property @{
+        Name = [string]$props.name        
+        LastLogin = [datetime]::FromFileTime($($props.lastlogontimestamp)).ToString('MM-dd-yy')
+        OperatingSystem = [string]$props.operatingsystem
+        ServicePack = [string]$props.operatingsystemservicepack
+        FQDN = [string]$props.dnshostname
+    }
+    $results += $resList
+}
 return $results
 }
 
@@ -110,17 +133,22 @@ foreach ($g in $list.properties) { #itorate through list of groups
     $resList = New-Object PsObject -Property @{ #Create PsObject for switch below
         GroupName = [String]$g.name
         GroupType = [String]$g.grouptype     
-        #GroupMembers = [String]$g.member                                                       
+        GroupMembers = [String[]]$g.member                                                       
     }
-               
-    switch ($resList.GroupType) { #Changes the grouptype for human readable format
-        "2" {$resList.GroupType = "GlobalDistroGroup"}
-        "4" {$resList.GroupType = "DomainLocalDistroGroup"}
-        "8" {$resList.GroupType = "UniversalDistroGroup"}
-        "-2147483646" {$resList.GroupType = "GlobalSecGroup"}
-        "-2147483644" {$resList.GroupType = "DomainLocalSecGroup"}
-        "-2147483640" {$resList.GroupType = "UniversalSecGroup"}
-        Default {$resList.GroupType = "OtherGroup"}
+    #loads of fun in this fucker. So because of the way PS handles strings and string arrays,
+    #this is the best way I know of to make it one big `n deliminated string
+    foreach ($m in $resList.GroupMembers) {       
+        if ($resList.GroupMembers -is [system.array]) { $resList.GroupMembers  = [string]"$m`n" }
+        else {$resList.GroupMembers = $resList.GroupMembers + "$m`n"}
+    }           
+    switch ($resList.GroupType) { #Changes the grouptype to human readable format
+        "2" {$resList.GroupType = "Global Distro Group"}
+        "4" {$resList.GroupType = "Domain Local Distro Group"}
+        "8" {$resList.GroupType = "Universal Distro Group"}
+        "-2147483646" {$resList.GroupType = "Global Sec Group"}
+        "-2147483644" {$resList.GroupType = "Domain Local Sec Group"}
+        "-2147483640" {$resList.GroupType = "Universal Sec Group"}
+        Default {$resList.GroupType = "Other Group"}
     }
     #$resList
     $results += $resList                
@@ -137,14 +165,12 @@ function get_ad_list {
                     Position=0)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]        
-        [ValidateSet("computer","user","group")]
-        [Alias("p1")] 
+        [ValidateSet("computer","user","group")]        
 	    $type,
         [Parameter(Mandatory=$false,
                     ValueFromPipeline=$false,
                     Position=1)]
         [ValidateSet("csv","html")]
-        [Alias("p2")]
         $file
     )
  
