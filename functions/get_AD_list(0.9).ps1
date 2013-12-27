@@ -60,6 +60,9 @@ Param(
     return $list #this returns an array of type 'SearchResult'
 }
 
+function make_pretty { #this is just here to remind me to do this.
+}
+
 function get_user_properties {
 Param(        
         [Parameter(Mandatory=$true, 
