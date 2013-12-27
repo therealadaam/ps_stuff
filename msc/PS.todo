@@ -1,0 +1,43 @@
+Evaluate Windows Domain
+
+X	Complete list of users - get_AD_list.ps1
+
+	Group Policies
+
+X	Security Groups - get_AD_list.ps1
+
+X	Distribution lists - get_AD_list.ps1
+
+	Share data sizes and locations
+
+	Share permissions (including explicit permissions)
+
+	Exchange: mailbox sizes
+
+	Exchange: Public folders
+
+	Mapped drive and Printer survey script
+
+	Workstation local data sizes
+
+	A/V: management location and policies
+
+	SQL: database names and sizes
+
+	Evaluate backup system
+
+Evaluate Network
+
+	Complete Gateway Checklist (router info)
+
+	Complete netscan of all networks
+
+	Managed switch documentation
+
+Contact 3rd party support vendors
+
+	Evaluate migration procedures
+
+	Evaluate backup procedures
+
+Further evaluate software and report questions to CSR

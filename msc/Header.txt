@@ -1,0 +1,15 @@
+﻿<#
+.Version
+    0.1
+    Created script, formated it out.
+
+.Synopsis
+   Created by Adam Rabenstein on 12-5-2013.
+   Gathers a list of domain computers, it excludes all servers.
+  
+.EXAMPLE
+   get_current_domain_computers
+
+.Todo
+    Switch for laptops or computers
+#>

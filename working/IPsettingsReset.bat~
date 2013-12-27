@@ -1,0 +1,4 @@
+@echo off
+REM used to reset IP settings then renew IP address with dhcp
+
+
