@@ -20,8 +20,6 @@ Created functions for gathering the properties, one function for each type.
 Added PsObjects to the user and computer functions.
 0.9
 Made the user email addressses and groupMembers a big string for easier export.
-Might think about just having a 'make_pretty' function to go through and 'fix'
-string arrays.
 
 .References
 http://msdn.microsoft.com/en-us/library/system.directoryservices.directorysearcher.aspx
@@ -32,9 +30,7 @@ http://blogs.technet.com/b/heyscriptingguy/archive/2006/11/09/how-can-i-use-wind
 Gets a list of all the computers/users/etc in the current domain and returns them.
 
 .Todo
-Think of making it 'look better' maybe a 'make_pretty' function.
-Perhaps use $object.psobject.typename.insert(0,"TypeName") and then check that on make_pretty.
-I'd also have to add that to the PsObject before I return it from get_X_properties function.
+
 
 .Example
 get_ad_list -type user -file csv #This outputs a $date_user.csv file.
@@ -58,9 +54,6 @@ Param(
     $sercher.Filter = ("(objectCategory=$category)")
     $list = $sercher.FindAll()
     return $list #this returns an array of type 'SearchResult'
-}
-
-function make_pretty { #this is just here to remind me to do this.
 }
 
 function get_user_properties {
