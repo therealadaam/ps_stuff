@@ -33,6 +33,7 @@ Gets a list of all the computers/users/etc in the current domain and returns the
 
 
 .Example
+Source the function '. ./get_AD_list.ps1' Then:
 get_ad_list -type user -file csv #This outputs a $date_user.csv file.
 get_ad_list -type computer #This outputs an object with data
 
@@ -122,7 +123,8 @@ Param(
 	    $list
 )
 $results = @() #initalize array for results
-foreach ($g in $list.properties) { #itorate through list of groups
+foreach ($g in $list) { #itorate through list of groups
+    $g = $g.properties
     $resList = New-Object PsObject -Property @{ #Create PsObject for switch below
         GroupName = [String]$g.name
         GroupType = [String]$g.grouptype     
