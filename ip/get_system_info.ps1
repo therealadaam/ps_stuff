@@ -37,9 +37,9 @@ Param(
         ProcType = [String]$processor.name
         ProcCores = [String]$processor.NumberOfCores
         Ram = [String]"{0:N2}" -f ($system.TotalPhysicalMemory/1GB) #This is some good magic. The "{0:N2}" gives us a number to 2 decimal places.
-        OsName = $osinfo.Caption
-        OsServicePack = $osinfo.CSDVersion
-        OsArch = $osinfo.OSArchitecture
+        OsName = [String]$osinfo.Caption
+        OsServicePack = [String]$osinfo.CSDVersion
+        OsArch = [String]$osinfo.OSArchitecture
         }
         $results += $view
     }
