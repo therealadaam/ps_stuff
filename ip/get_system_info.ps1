@@ -30,16 +30,16 @@ Param(
         $osinfo = gwmi win32_operatingsystem -ComputerName $c #os from wmi
 
         $view = New-Object PsObject -Property @{ #new object to itorate through and allow easier formatting, etc
-        SystemName = [String]$system.Name
-        SystemModel = [String]$system.Model
-        SysUser = [String]$system.UserName
-        ProcModel = [String]$processor.Caption
-        ProcType = [String]$processor.name
-        ProcCores = [String]$processor.NumberOfCores
-        Ram = [String]"{0:N2}" -f ($system.TotalPhysicalMemory/1GB) #This is some good magic. The "{0:N2}" gives us a number to 2 decimal places.
-        OsName = [String]$osinfo.Caption
-        OsServicePack = [String]$osinfo.CSDVersion
-        OsArch = [String]$osinfo.OSArchitecture
+            SystemName = [String]$system.Name
+            SystemModel = [String]$system.Model
+            SysUser = [String]$system.UserName
+            ProcModel = [String]$processor.Caption
+            ProcType = [String]$processor.name
+            ProcCores = [String]$processor.NumberOfCores
+            Ram = [String]"{0:N2}" -f ($system.TotalPhysicalMemory/1GB) #"{0:N2}" gives us a number to 2 decimal places.
+            OsName = [String]$osinfo.Caption
+            OsServicePack = [String]$osinfo.CSDVersion
+            OsArch = [String]$osinfo.OSArchitecture
         }
         $results += $view
     }
