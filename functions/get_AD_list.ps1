@@ -30,14 +30,20 @@ http://blogs.technet.com/b/heyscriptingguy/archive/2006/11/09/how-can-i-use-wind
 Gets a list of all the computers/users/etc in the current domain and returns them.
 
 .Todo
-
+Add an -all option and have it do everything and export to csv
 
 .Example
+Easy way:
+'.\get_ad_list -getAll
+
+Fun way:
 Source the function '. ./get_AD_list.ps1' Then:
 get_ad_list -type user -file csv #This outputs a $date_user.csv file.
 get_ad_list -type computer #This outputs an object with data
 
 #>
+#Make it easier to run
+param([switch]$getAll = $args[0])
 
 #function to search Active Directory.
 function search_ad {
@@ -185,4 +191,10 @@ function get_ad_list {
         html {$results | ConvertTo-Html | Out-File "$($date)_$($type).html"}
         Default {return $results}    
     }
+}
+
+if ($getAll) {
+    get_ad_list -type user -file csv
+    get_ad_list -type group -file csv
+    get_ad_list -type computer -file csv
 }
