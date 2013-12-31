@@ -1,12 +1,4 @@
 <#
-.Version
-0.1
-Created script, formated it out.
-0.2
-Added basics for system, processor, os.
-0.3
-Added a bunch more stuff.
-
 .Synopsis
    Created by Adam Rabenstein on 12-24-2013.   
 
@@ -14,7 +6,7 @@ Added a bunch more stuff.
 http://4sysops.com/archives/remotely-query-user-profile-information-with-powershell/
   
 .EXAMPLE
-   get_system_info $computers
+get_system_info $computers
 
 .Todo
     
