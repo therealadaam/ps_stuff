@@ -28,6 +28,7 @@ Param(
         $system = gwmi win32_computersystem -ComputerName $c #get system from wmi
         $processor = gwmi win32_processor -ComputerName $c #get processor from wmi
         $osinfo = gwmi win32_operatingsystem -ComputerName $c #os from wmi
+        $printers = Get-WmiObject -Class win32_printer -ComputerName $c
 
         $view = New-Object PsObject -Property @{ #new object to itorate through and allow easier formatting, etc
             SystemName = [String]$system.Name
