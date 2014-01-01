@@ -12,7 +12,7 @@ get_system_info $computers
     
 #>
 
-function printers {
+function user_printers {
 Param(
         [Parameter(Mandatory=$true, 
                     ValueFromPipeline=$false,                    
@@ -33,7 +33,7 @@ Param(
     return $res
 }
 
-function profiles {
+function user_profiles {
 Param(
         [Parameter(Mandatory=$true, 
                     ValueFromPipeline=$false,                    
@@ -81,14 +81,24 @@ Param(
     return $res
 }
 
-function drives {
+function user_mapped_drives {
 Param(
         [Parameter(Mandatory=$true, 
                     ValueFromPipeline=$false,                    
                     Position=0)]        
 	    $ary
     )
-    
+    $res = @()
+    foreach ($i in $ary) {
+        $temp = New-Object psobject -Property @{
+            DriveName = [String]$i.name
+            DriveFree = [String]"{0:N2} GB" -f ($i.freespace/1GB)
+            DriveTotal = [String]"{0:N2} GB" -f ($i.size/1GB)
+            DriveProvider = [String]$i.providername
+        }
+        $res += $temp
+    }
+    return $res
 }
 
 
@@ -105,16 +115,20 @@ Param(
     foreach ($c in $computers) {
         
         #Get all the WMI data at once. This will probably take awhile.
+        #easy stuff
         $system = gwmi win32_computersystem -ComputerName $c
         $processor = gwmi win32_processor -ComputerName $c
         $osinfo = gwmi win32_operatingsystem -ComputerName $c
+
+        #Not as easy
         $printers = Get-WmiObject -Class win32_printer -ComputerName $c
         $profiles = Get-WmiObject -Class win32_userprofile -ComputerName $c
-        $drives = Get-WmiObject -Class win32_mappedlogicaldisk -ComputerName $c
+        $mapped = Get-WmiObject -Class win32_mappedlogicaldisk -ComputerName $c
 
         #call functions
-        $printerRes = printers($printers)
-        $profileRes = profiles($profiles)
+        $printerRes = user_printers($printers)
+        $profileRes = user_profiles($profiles)
+        $mappedRes = user_mapped_drives($mapped)
 
         $genInfo = New-Object PsObject -Property @{ #new object to Combine everything
             SystemName = [String]$system.Name
@@ -129,6 +143,9 @@ Param(
             OsArch = [String]$osinfo.OSArchitecture            
         }
         $results += $genInfo
+        $results +=$mappedRes
+        $results += $profileRes
+        $results += $printerRes
     }
     return $results
 }
