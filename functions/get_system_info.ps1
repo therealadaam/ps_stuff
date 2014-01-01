@@ -142,6 +142,8 @@ Param(
             OsServicePack = [String]$osinfo.CSDVersion
             OsArch = [String]$osinfo.OSArchitecture            
         }
+
+        #glob everything into a big array
         $results += $genInfo
         $results +=$mappedRes
         $results += $profileRes
