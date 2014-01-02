@@ -81,7 +81,7 @@ Param(
     return $res
 }
 
-function user_mapped_drives {
+function user_drives {
 Param(
         [Parameter(Mandatory=$true, 
                     ValueFromPipeline=$false,                    
@@ -95,7 +95,18 @@ Param(
             DriveFree = [String]"{0:N2} GB" -f ($i.freespace/1GB)
             DriveTotal = [String]"{0:N2} GB" -f ($i.size/1GB)
             DriveProvider = [String]$i.providername
+            DriveType = $i.drivetype
         }
+        switch ($temp.drivetype) {
+            1 {$temp.drivetype = [string]"No Root Dir"}
+            2 {$temp.drivetype = [string]"Removable Disk"}
+            3 {$temp.drivetype = [string]"Logical Disk"}
+            4 {$temp.drivetype = [string]"Network Drive"}
+            5 {$temp.drivetype = [string]"CD drive"}
+            6 {$temp.drivetype = [string]"RAM disk"}
+            Default {$temp.drivetype = [string]"Unknown Type"}
+        }
+
         $res += $temp
     }
     return $res
@@ -123,12 +134,12 @@ Param(
         #Not as easy
         $printers = Get-WmiObject -Class win32_printer -ComputerName $c
         $profiles = Get-WmiObject -Class win32_userprofile -ComputerName $c
-        $mapped = Get-WmiObject -Class win32_mappedlogicaldisk -ComputerName $c
+        $drives = Get-WmiObject -Class win32_logicaldisk -ComputerName $c
 
         #call functions
         $printerRes = user_printers($printers)
         $profileRes = user_profiles($profiles)
-        $mappedRes = user_mapped_drives($mapped)
+        $drivesRes = user_drives($drives)
 
         $genInfo = New-Object PsObject -Property @{ #new object to Combine everything
             SystemName = [String]$system.Name
@@ -145,7 +156,7 @@ Param(
 
         #glob everything into a big array
         $results += $genInfo
-        $results +=$mappedRes
+        $results +=$drivesRes
         $results += $profileRes
         $results += $printerRes
     }
