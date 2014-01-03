@@ -187,14 +187,22 @@ Param(
             OsArch = [String]$osinfo.OSArchitecture            
         }
 
+        #the replacement:
+
         #glob everything into a big array
-        $results += $genInfo
+        $results += $genInfo  
+        <#      
         $results +=$drivesRes
         $results += $profileRes
         $results += $printerRes
         $results += $networkRes
+        #>
+        
+        $domain = $env:USERDOMAIN
+        $date = Get-Date -Format "MM-dd-yy_hhmm"
+        #append to the csvFile
+        $results | Export-Csv "$($domain)_$($date).csv" -NoTypeInformation -Append
     }
-    $domain = $env:USERDOMAIN
-    $date = Get-Date -Format "MM-dd-yy_hhmm"
+    
     return $results
 }
