@@ -154,7 +154,7 @@ Param(
     $results = @() #initalize array for results
 
     foreach ($c in $computers) {
-        
+        Write-Progress -Activity "Getting data" -Status "Working on $c" -PercentComplete ( ($c.Count/$computers.Length) * 100)
         #Get all the WMI data at once. This will probably take awhile.
         #easy stuff
         $system = gwmi win32_computersystem -ComputerName $c
@@ -194,5 +194,7 @@ Param(
         $results += $printerRes
         $results += $networkRes
     }
+    $domain = $env:USERDOMAIN
+    $date = Get-Date -Format "MM-dd-yy_hhmm"
     return $results
 }
