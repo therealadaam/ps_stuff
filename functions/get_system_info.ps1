@@ -127,12 +127,16 @@ Param(
             Ip_addr_4 = [String[]]$i.ipaddress
             Ip_addr_6 = [String]""
             Gateway = [String]$i.DefaultIpGateway
+            DNS_server = [String]$i.DNSServerSearchOrder[0]
+            DNS_server2 = [String]$i.DNSServerSearchOrder[1]
         }
         #if there are more than 1 IP address do stuff
         if ($temp.Ip_addr_4.length -gt 1) {
             $temp.Ip_addr_6 = [String]$temp.Ip_addr_4[1]
             $temp.Ip_addr_4 = [String]$temp.Ip_addr_4[0]
-        }
+        } else {
+            $temp.Ip_addr_4 = [String]$temp.Ip_addr_4
+        }        
 
         $res += $temp
     }
