@@ -42,8 +42,6 @@ get_ad_list -type user -file csv #This outputs a $date_user.csv file.
 get_ad_list -type computer #This outputs an object with data
 
 #>
-#Make it easier to run
-param([switch]$getAll = $args[0])
 
 #function to search Active Directory.
 function search_ad {
@@ -193,8 +191,7 @@ function get_ad_list {
     }
 }
 
-if ($getAll) {
-    get_ad_list -type user -file csv
-    get_ad_list -type group -file csv
-    get_ad_list -type computer -file csv
-}
+#get the stuff
+get_ad_list -type user -file csv
+get_ad_list -type group -file csv
+get_ad_list -type computer -file csv
