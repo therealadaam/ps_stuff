@@ -112,6 +112,32 @@ Param(
     return $res
 }
 
+function computer_network {
+Param(
+        [Parameter(Mandatory=$true, 
+                    ValueFromPipeline=$false,                    
+                    Position=0)]        
+	    $ary
+    )
+    $res = @()
+    foreach ($i in $ary) {
+        $temp = New-Object psobject -Property @{
+            DHCP = [String]$i.dhcpenabled
+            NIC_Mac = [String]$i.MACAddress
+            Ip_addr_4 = [String[]]$i.ipaddress
+            Ip_addr_6 = [String]""
+            Gateway = [String]$i.DefaultIpGateway
+        }
+        #if there are more than 1 IP address do stuff
+        if ($temp.Ip_addr_4.length -gt 1) {
+            $temp.Ip_addr_6 = [String]$temp.Ip_addr_4[1]
+            $temp.Ip_addr_4 = [String]$temp.Ip_addr_4[0]
+        }
+
+        $res += $temp
+    }
+    return $res
+}
 
 function get_system_info {
 Param(
@@ -135,11 +161,14 @@ Param(
         $printers = Get-WmiObject -Class win32_printer -ComputerName $c
         $profiles = Get-WmiObject -Class win32_userprofile -ComputerName $c
         $drives = Get-WmiObject -Class win32_logicaldisk -ComputerName $c
+        $network = Get-WmiObject -Class Win32_NetworkAdapterConfiguration -ComputerName $c |`
+            where{$_.IPEnabled -eq "True"}
 
         #call functions
         $printerRes = user_printers($printers)
         $profileRes = user_profiles($profiles)
         $drivesRes = user_drives($drives)
+        $networkRes = computer_network($network)
 
         $genInfo = New-Object PsObject -Property @{ #new object to Combine everything
             SystemName = [String]$system.Name
@@ -159,6 +188,7 @@ Param(
         $results +=$drivesRes
         $results += $profileRes
         $results += $printerRes
+        $results += $networkRes
     }
     return $results
 }
