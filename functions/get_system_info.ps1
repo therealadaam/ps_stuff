@@ -12,6 +12,25 @@ get_system_info $computers
     
 #>
 
+function user_printers2 {
+Param(
+        $ary,
+        $obj
+    )
+    $num = 0
+    foreach ($i in $ary) {       
+        $obj | Add-Member -Name "Printer_$($num)_Name" -Value "$($i.name)" -MemberType NoteProperty
+        $obj | Add-Member -Name "Printer_$($num)_ShareName" -Value "$($i.ShareName)" -MemberType NoteProperty
+        $obj | Add-Member -Name "Printer_$($num)_Server" -Value "$($i.ServerName)" -MemberType NoteProperty
+        $obj | Add-Member -Name "Printer_$($num)_Local" -Value "$($i.PortName)" -MemberType NoteProperty
+        $obj | Add-Member -Name "Printer_$($num)_Port" -Value "$($i.PortName)" -MemberType NoteProperty
+        $num++
+    }
+    return $obj
+}
+$printers = Get-WmiObject -Class win32_printer
+#$printerRes = user_printers($printers)
+
 function user_printers {
 Param(
         [Parameter(Mandatory=$true, 
@@ -119,7 +138,7 @@ Param(
                     Position=0)]        
 	    $ary
     )
-    $res = @()
+    
     foreach ($i in $ary) {
         $temp = New-Object psobject -Property @{
             DHCP = [String]$i.dhcpenabled
@@ -130,7 +149,7 @@ Param(
             DNS_server = [String]$i.DNSServerSearchOrder[0]
             DNS_server2 = [String]$i.DNSServerSearchOrder[1]
         }
-        #if there are more than 1 IP address do stuff
+        #if there is more than 1 IP address do stuff
         if ($temp.Ip_addr_4.length -gt 1) {
             $temp.Ip_addr_6 = [String]$temp.Ip_addr_4[1]
             $temp.Ip_addr_4 = [String]$temp.Ip_addr_4[0]
@@ -169,7 +188,7 @@ Param(
             where{$_.IPEnabled -eq "True"}
 
         #call functions
-        $printerRes = user_printers($printers)
+        #$printerRes = user_printers($printers)
         $profileRes = user_profiles($profiles)
         $drivesRes = user_drives($drives)
         $networkRes = computer_network($network)
@@ -187,7 +206,9 @@ Param(
             OsArch = [String]$osinfo.OSArchitecture            
         }
 
+        user_printers2 -ary $printers -obj $genInfo
         #the replacement:
+
 
         #glob everything into a big array
         $results += $genInfo  
