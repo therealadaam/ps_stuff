@@ -12,7 +12,7 @@ get_system_info $computers
     
 #>
 
-function user_printers2 {
+function user_printers {
 Param(
         $ary,
         $obj
@@ -31,7 +31,7 @@ Param(
 $printers = Get-WmiObject -Class win32_printer
 #$printerRes = user_printers($printers)
 
-function user_printers {
+function user_printers_old {
 Param(
         [Parameter(Mandatory=$true, 
                     ValueFromPipeline=$false,                    
@@ -53,6 +53,70 @@ Param(
 }
 
 function user_profiles {
+Param(
+        $ary,
+        $obj
+    )
+    
+
+    #main part
+    $num = 0
+    foreach ($i in $ary) {
+        if ($i.special) { continue } #Skip special accounts, networkservice,etc.
+        
+        #translate SID to username
+        try {
+            $tmpSID = New-Object System.Security.Principal.SecurityIdentifier($i.sid)
+            $tmpUsr = $tmpSID.Translate([System.Security.Principal.NTAccount])
+        }
+        catch {
+            $tmpUsr = New-Object psobject -Property @{Value=""}
+            $tmpUsr.Value = [String]$i.sid
+        }
+
+        #ProfileTime Conversion
+        $lut = ([WMI]"").Converttodatetime($i.lastusetime)
+        [String]$lut = $lut |Get-Date -Format 'MM-dd-yyyy'
+
+        switch ($i.Status) {
+            1 {$status = [string]"Temporary"}
+            2 {$status = [string]"Roaming"}
+            4 {$status = [string]"Mandatory"}
+            8 {$status = [string]"Corrupted Local Profile"}
+            12 {$status = [string]"Corrupted Roaming Profile"}
+            Default {$status = [string]"Local"}
+        }
+           
+        $obj | Add-Member -Name "Profile_$($num)_SID" -Value "$($i.SID)" -MemberType NoteProperty
+        $obj | Add-Member -Name "Profile_$($num)_Status" -Value "$($status)" -MemberType NoteProperty
+        $obj | Add-Member -Name "Profile_$($num)_LocalPath" -Value "$($i.LocalPath)" -MemberType NoteProperty
+        $obj | Add-Member -Name "Profile_$($num)_RoamingPath" -Value "$($i.RoamingPath)" -MemberType NoteProperty
+        $obj | Add-Member -Name "Profile_$($num)_LastUse" -Value "$($lut)" -MemberType NoteProperty
+        $obj | Add-Member -Name "Profile_$($num)_UserName" -Value "$($tmpUsr.Value)" -MemberType NoteProperty
+
+        
+
+        $num++
+    }
+    <# Old stuff
+    $temp = New-Object psobject -Property @{
+            ProfileSID = [String]$i.SID
+            ProfileStatus = $i.Status
+            ProfileLocalPath = [String]$i.LocalPath
+            ProfileRamingPath = [String]$i.RoamingPath
+            ProfileLastUse = [String]$lut
+            ProfileUsername = [String]$tmpUsr.Value
+        } 
+    #>
+
+
+    #Switch for ProfileStatus
+    
+
+    return $obj
+}
+
+function user_profiles_old {
 Param(
         [Parameter(Mandatory=$true, 
                     ValueFromPipeline=$false,                    
@@ -189,7 +253,7 @@ Param(
 
         #call functions
         #$printerRes = user_printers($printers)
-        $profileRes = user_profiles($profiles)
+        #$profileRes = user_profiles($profiles)
         $drivesRes = user_drives($drives)
         $networkRes = computer_network($network)
 
@@ -206,12 +270,13 @@ Param(
             OsArch = [String]$osinfo.OSArchitecture            
         }
 
-        user_printers2 -ary $printers -obj $genInfo
+        user_printers -ary $printers -obj $genInfo
+        user_profiles -ary $profiles -obj $genInfo
         #the replacement:
 
 
         #glob everything into a big array
-        $results += $genInfo  
+        #$results += $genInfo  
         <#      
         $results +=$drivesRes
         $results += $profileRes
@@ -222,7 +287,7 @@ Param(
         $domain = $env:USERDOMAIN
         $date = Get-Date -Format "MM-dd-yy_hhmm"
         #append to the csvFile
-        $results | Export-Csv "$($domain)_$($date).csv" -NoTypeInformation -Append
+        $genInfo | Export-Csv "$($domain)_$($date).csv" -NoTypeInformation -Append
     }
     
     return $results
