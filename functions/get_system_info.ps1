@@ -12,7 +12,7 @@ get_system_info $computers
     
 #>
 if ($PSVersionTable.PSVersion.Major -lt 3) { #check PS version and import csv_function if needed
-    .\functions\export_csv_append_PSV2.ps1
+    .\export_csv_append_PSV2.ps1
 }
 
 function write_log {
