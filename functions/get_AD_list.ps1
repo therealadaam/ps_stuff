@@ -1,45 +1,12 @@
 ﻿<#
 Created by Adam Rabenstein
 
-.Version
-0.1
-Gets computers from local domain and returns them.
-0.2
-Gets types now with switches that returns the most 'needed' types of results.
-0.3
-Added validation and need to finish output feature/function.
-0.4
-Added Groups and PsObject for the groups, this broke csv and html output for groups.
-0.5
-Fixed the group output.
-0.6
-Made search_ad function and commented out stuff from get_ad_list function.
-0.7
-Created functions for gathering the properties, one function for each type.
-0.8
-Added PsObjects to the user and computer functions.
-0.9
-Made the user email addressses and groupMembers a big string for easier export.
-
 .References
 http://msdn.microsoft.com/en-us/library/system.directoryservices.directorysearcher.aspx
 http://blogs.technet.com/b/heyscriptingguy/archive/2006/11/09/how-can-i-use-windows-powershell-to-get-a-list-of-all-my-computers.aspx
 
-
 .Synopsis
 Gets a list of all the computers/users/etc in the current domain and returns them.
-
-.Todo
-Add an -all option and have it do everything and export to csv
-
-.Example
-Easy way:
-'.\get_ad_list -getAll
-
-Fun way:
-Source the function '. ./get_AD_list.ps1' Then:
-get_ad_list -type user -file csv #This outputs a $date_user.csv file.
-get_ad_list -type computer #This outputs an object with data
 
 #>
 $dumpAll = $fals
