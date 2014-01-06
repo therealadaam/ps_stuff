@@ -20,7 +20,9 @@ get_ad_list -type group -file csv
 
 #get the list of computers in a 
 $computersAD = search_ad("computer")
-$computers = $computersAD.properties.name
+foreach ($c in $computersAD) {
+    $computers += $c.properties.name
+}
 
 #get the information for all the computers
 get_system_info -computers $computers
