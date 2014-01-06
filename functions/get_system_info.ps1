@@ -161,6 +161,7 @@ Param(
                     where{$_.IPEnabled -eq "True"}
             } catch {
                 write_log "Error accessing WMI on $c"
+                continue
             }
 
             $genInfo = New-Object PsObject -Property @{ #new object to Combine everything
