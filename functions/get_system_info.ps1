@@ -11,6 +11,9 @@ get_system_info $computers
 .Todo
     
 #>
+if ($PSVersionTable.PSVersion.Major -lt 3) { #check PS version and import csv_function if needed
+    .\functions\export_csv_append_PSV2.ps1
+}
 
 function write_log {
 Param($toWrite)
@@ -142,6 +145,8 @@ Param(
                     Position=0)]        
 	    [String[]]$computers = $env:COMPUTERNAME #cast this as a string array and fill by default
     )
+    $domain = $env:USERDOMAIN
+    $date = Get-Date -Format "MM-dd-yy_hhmm"
     foreach ($c in $computers) {
         Write-Progress -Activity "Getting data" -Status "Working on $c" -PercentComplete ( ($c.Count/$computers.Length) * 100)
         $online = Test-Connection -ComputerName $c -Count 2 -Quiet
@@ -180,10 +185,8 @@ Param(
             user_printers -ary $printers -obj $genInfo
             user_profiles -ary $profiles -obj $genInfo
             user_drives -ary $drives -obj $genInfo
-            computer_network -ary $network -obj $genInfo        
-        
-            $domain = $env:USERDOMAIN
-            $date = Get-Date -Format "MM-dd-yy_hhmm"
+            computer_network -ary $network -obj $genInfo  
+            
             #append to the csvFile
             $genInfo | Export-Csv "$($domain)_$($date).csv" -NoTypeInformation -Append
             write_log -toWrite "Computer: $c information added to csv file"
