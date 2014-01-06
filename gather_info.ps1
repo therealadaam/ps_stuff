@@ -12,9 +12,6 @@
 #source stuff
 . .\functions\get_AD_list.ps1
 . .\functions\get_system_info.ps1
-if ($PSVersionTable.PSVersion.Major -le 3) {
-    .\functions\export_csv_append_PSV2.ps1
-}
 
 #dump AD to csv files
 get_ad_list -type computer -file csv
