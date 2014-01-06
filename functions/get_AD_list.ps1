@@ -9,7 +9,7 @@ http://blogs.technet.com/b/heyscriptingguy/archive/2006/11/09/how-can-i-use-wind
 Gets a list of all the computers/users/etc in the current domain and returns them.
 
 #>
-$dumpAll = $fals
+$dumpAll = $false
 #function to search Active Directory.
 function search_ad {
 Param(
