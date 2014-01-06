@@ -12,6 +12,14 @@ get_system_info $computers
     
 #>
 
+function write_log {
+Param($toWrite)
+    $log = $MyInvocation.ScriptName + ".log"
+    $time = Get-Date -Format 'dd-MM-yy_HH:MM::ss'
+    Add-Content -Value $time -Path $log
+    Add-Content -Value $toWrite -Path $log
+}
+
 function user_printers {
 Param(
         $ary,
@@ -136,40 +144,50 @@ Param(
     )
     foreach ($c in $computers) {
         Write-Progress -Activity "Getting data" -Status "Working on $c" -PercentComplete ( ($c.Count/$computers.Length) * 100)
-        #Get all the WMI data at once. This will probably take awhile.
-        #easy stuff
-        $system = gwmi win32_computersystem -ComputerName $c
-        $processor = gwmi win32_processor -ComputerName $c
-        $osinfo = gwmi win32_operatingsystem -ComputerName $c
+        $online = Test-Connection -ComputerName $c -Count 2 -Quiet
+        if ($online) {
+            try {
+                #Get all the WMI data at once. This will probably take awhile.
+                #easy stuff
+                $system = gwmi win32_computersystem -ComputerName $c
+                $processor = gwmi win32_processor -ComputerName $c
+                $osinfo = gwmi win32_operatingsystem -ComputerName $c
 
-        #Not as easy
-        $printers = Get-WmiObject -Class win32_printer -ComputerName $c
-        $profiles = Get-WmiObject -Class win32_userprofile -ComputerName $c
-        $drives = Get-WmiObject -Class win32_logicaldisk -ComputerName $c
-        $network = Get-WmiObject -Class Win32_NetworkAdapterConfiguration -ComputerName $c |`
-            where{$_.IPEnabled -eq "True"}
+                #Not as easy
+                $printers = Get-WmiObject -Class win32_printer -ComputerName $c
+                $profiles = Get-WmiObject -Class win32_userprofile -ComputerName $c
+                $drives = Get-WmiObject -Class win32_logicaldisk -ComputerName $c
+                $network = Get-WmiObject -Class Win32_NetworkAdapterConfiguration -ComputerName $c |`
+                    where{$_.IPEnabled -eq "True"}
+            } catch {
+                write_log "Error accessing WMI on $c"
+            }
 
-        $genInfo = New-Object PsObject -Property @{ #new object to Combine everything
-            SystemName = [String]$system.Name
-            SystemModel = [String]$system.Model
-            SysUser = [String]$system.UserName
-            ProcModel = [String]$processor.Caption
-            ProcType = [String]$processor.name
-            ProcCores = [String]$processor.NumberOfCores
-            Ram = [String]"{0:N2}" -f ($system.TotalPhysicalMemory/1GB) #"{0:N2}" gives us a number to 2 decimal places.
-            OsName = [String]$osinfo.Caption
-            OsServicePack = [String]$osinfo.CSDVersion
-            OsArch = [String]$osinfo.OSArchitecture            
-        }
+            $genInfo = New-Object PsObject -Property @{ #new object to Combine everything
+                SystemName = [String]$system.Name
+                SystemModel = [String]$system.Model
+                SysUser = [String]$system.UserName
+                ProcModel = [String]$processor.Caption
+                ProcType = [String]$processor.name
+                ProcCores = [String]$processor.NumberOfCores
+                Ram = [String]"{0:N2}" -f ($system.TotalPhysicalMemory/1GB) #"{0:N2}" gives us a number to 2 decimal places.
+                OsName = [String]$osinfo.Caption
+                OsServicePack = [String]$osinfo.CSDVersion
+                OsArch = [String]$osinfo.OSArchitecture            
+            }
 
-        user_printers -ary $printers -obj $genInfo
-        user_profiles -ary $profiles -obj $genInfo
-        user_drives -ary $drives -obj $genInfo
-        computer_network -ary $network -obj $genInfo        
+            user_printers -ary $printers -obj $genInfo
+            user_profiles -ary $profiles -obj $genInfo
+            user_drives -ary $drives -obj $genInfo
+            computer_network -ary $network -obj $genInfo        
         
-        $domain = $env:USERDOMAIN
-        $date = Get-Date -Format "MM-dd-yy_hhmm"
-        #append to the csvFile
-        $genInfo | Export-Csv "$($domain)_$($date).csv" -NoTypeInformation -Append
+            $domain = $env:USERDOMAIN
+            $date = Get-Date -Format "MM-dd-yy_hhmm"
+            #append to the csvFile
+            $genInfo | Export-Csv "$($domain)_$($date).csv" -NoTypeInformation -Append
+            write_log -toWrite "Computer: $c information added to csv file"
+        } else {
+            write_log -toWrite "Can't connect to $c"
+        }
     }
 }
