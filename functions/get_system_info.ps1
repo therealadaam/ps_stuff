@@ -154,25 +154,26 @@ Param(
             try {
                 #Get all the WMI data at once. This will probably take awhile.
                 #easy stuff
-                $system = gwmi win32_computersystem -ComputerName $c -ErrorAction Stop -ErrorVariable wmiError
-                $processor = gwmi win32_processor -ComputerName $c -ErrorAction Stop -ErrorVariable wmiError
-                $osinfo = gwmi win32_operatingsystem -ComputerName $c -ErrorAction Stop -ErrorVariable wmiError
+                $system = gwmi win32_computersystem -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
+                $processor = gwmi win32_processor -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
+                $osinfo = gwmi win32_operatingsystem -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
 
                 #Not as easy
-                $printers = Get-WmiObject -Class win32_printer -ComputerName $c -ErrorAction Stop -ErrorVariable wmiError
+                $printers = Get-WmiObject -Class win32_printer -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
 
                 #Todo unfuck this up. Crawl reg for pcs < Vista.
                 #HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList
-                #$profiles = Get-WmiObject -Class win32_userprofile -ComputerName $c -ErrorAction Stop -ErrorVariable wmiError
+                #$profiles = Get-WmiObject -Class win32_userprofile -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
 
 
-                $drives = Get-WmiObject -Class win32_logicaldisk -ComputerName $c -ErrorAction Stop -ErrorVariable wmiError
+                $drives = Get-WmiObject -Class win32_logicaldisk -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
                 $network = Get-WmiObject -Class Win32_NetworkAdapterConfiguration -ComputerName $c -ErrorAction Stop `
-                                                                                                -ErrorVariable wmiError | `
+                                                                                                -ErrorVariable +wmiError | `
                   where{$_.IPEnabled -eq "True"}
             } catch {
                 write_log "Error accessing WMI on $c"
                 write_log $wmiError
+                $wmiError.Clear() #clear erros after writting them
                 continue
             }
 
