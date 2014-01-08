@@ -160,7 +160,12 @@ Param(
 
                 #Not as easy
                 $printers = Get-WmiObject -Class win32_printer -ComputerName $c -ErrorAction Stop -ErrorVariable wmiError
-                $profiles = Get-WmiObject -Class win32_userprofile -ComputerName $c -ErrorAction Stop -ErrorVariable wmiError
+
+                #Todo unfuck this up. Crawl reg for pcs < Vista.
+                #HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList
+                #$profiles = Get-WmiObject -Class win32_userprofile -ComputerName $c -ErrorAction Stop -ErrorVariable wmiError
+
+
                 $drives = Get-WmiObject -Class win32_logicaldisk -ComputerName $c -ErrorAction Stop -ErrorVariable wmiError
                 $network = Get-WmiObject -Class Win32_NetworkAdapterConfiguration -ComputerName $c -ErrorAction Stop `
                                                                                                 -ErrorVariable wmiError | `
@@ -185,7 +190,7 @@ Param(
             }
 
             user_printers -ary $printers -obj $genInfo
-            user_profiles -ary $profiles -obj $genInfo
+            #user_profiles -ary $profiles -obj $genInfo
             user_drives -ary $drives -obj $genInfo
             computer_network -ary $network -obj $genInfo  
             
