@@ -37,7 +37,6 @@ Param(
         $obj | Add-Member -Name "Printer_$($num)_Port" -Value "$($i.PortName)" -MemberType NoteProperty
         $num++
     }
-    return $obj
 }
 
 function user_profiles {
@@ -81,7 +80,6 @@ Param(
         $obj | Add-Member -Name "Profile_$($num)_UserName" -Value "$($tmpUsr.Value)" -MemberType NoteProperty
         $num++
     }
-    return $obj
 }
 
 function user_drives {
@@ -109,7 +107,6 @@ Param(
         $obj | Add-Member -Name "Drive_$($num)_Type" -Value "$($dType)" -MemberType NoteProperty
         $num++
     }
-    return $obj
 }
 
 function computer_network {
@@ -134,8 +131,19 @@ Param(
         $obj | Add-Member -Name "NIC_$($num)_DNS_server_1" -Value "$($i.DNSServerSearchOrder[0])" -MemberType NoteProperty
         $obj | Add-Member -Name "NIC_$($num)_DNS_server_2" -Value "$($i.DNSServerSearchOrder[1])" -MemberType NoteProperty
         $num++
+    }    
+}
+
+function user_profiles_from_reg {
+Param($computer)    
+
+    $remoteHive = [Microsoft.Win32.RegistryHive]"LocalMachine"
+    $regKey = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey($remoteHive,$computer)
+    $profileList = $regKey.OpenSubKey(“SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\”,$true)
+    $remoteProfiles = $profileList.GetSubKeyNames()  
+    foreach ($p in $remoteProfiles) {
+         $thisProfile = $regKey.OpenSubKey(“SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$p”,$true)
     }
-    return $obj
 }
 
 function get_system_info {
@@ -151,30 +159,34 @@ Param(
         Write-Progress -Activity "Getting data" -Status "Working on $c" -PercentComplete ( ($c.Count/$computers.Length) * 100)
         $online = Test-Connection -ComputerName $c -Count 2 -Quiet
         if ($online) {
-            try {
-                #Get all the WMI data at once. This will probably take awhile.
-                #easy stuff
-                $system = gwmi win32_computersystem -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
-                $processor = gwmi win32_processor -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
-                $osinfo = gwmi win32_operatingsystem -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
+            
+            #Get all the WMI data at once. This will probably take awhile.
+            #easy stuff
+            $system = gwmi win32_computersystem -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
+            $processor = gwmi win32_processor -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
+            $osinfo = gwmi win32_operatingsystem -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
 
-                #Not as easy
-                $printers = Get-WmiObject -Class win32_printer -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
+            #Not as easy
+            $printers = Get-WmiObject -Class win32_printer -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
+            
+            if ($osinfo.Version[0] -ne '6') {
+                #call if 2k3 or xp
+                #$profiles = user_profiles_from_reg -computer $c
+                write_log " No profile info for $c 2k3 and XP is not yet supported."
+            } else {
+                $profiles = Get-WmiObject -Class win32_userprofile -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
+            }            
 
-                #Todo unfuck this up. Crawl reg for pcs < Vista.
-                #HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList
-                #$profiles = Get-WmiObject -Class win32_userprofile -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
+            $drives = Get-WmiObject -Class win32_logicaldisk -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
+            $network = Get-WmiObject -Class Win32_NetworkAdapterConfiguration -ComputerName $c -ErrorAction Stop `
+                                                                                            -ErrorVariable +wmiError |
+                                                                                        where{$_.IPEnabled -eq "True"}
 
-
-                $drives = Get-WmiObject -Class win32_logicaldisk -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
-                $network = Get-WmiObject -Class Win32_NetworkAdapterConfiguration -ComputerName $c -ErrorAction Stop `
-                                                                                                -ErrorVariable +wmiError | `
-                  where{$_.IPEnabled -eq "True"}
-            } catch {
+            trap {
                 write_log "Error accessing WMI on $c"
                 write_log $wmiError
                 $wmiError.Clear() #clear erros after writting them
-                continue
+                if ($system.name -ne $c) { continue } #skip pc if nothing from WMI
             }
 
             $genInfo = New-Object PsObject -Property @{ #new object to Combine everything
@@ -189,9 +201,9 @@ Param(
                 OsServicePack = [String]$osinfo.CSDVersion
                 OsArch = [String]$osinfo.OSArchitecture            
             }
-
+            #add information to the array
             user_printers -ary $printers -obj $genInfo
-            #user_profiles -ary $profiles -obj $genInfo
+            user_profiles -ary $profiles -obj $genInfo
             user_drives -ary $drives -obj $genInfo
             computer_network -ary $network -obj $genInfo  
             
