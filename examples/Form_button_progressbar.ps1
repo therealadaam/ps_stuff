@@ -10,8 +10,8 @@ $Form.Text = "Computer Pinging Tool"
 $Form.Size = New-Object System.Drawing.Size(300,170)
 $Form.StartPosition = "CenterScreen"
 $Form.KeyPreview = $True
-$Form.MaximumSize = $Form.Size
-$Form.MinimumSize = $Form.Size
+#$Form.MaximumSize = $Form.Size
+#$Form.MinimumSize = $Form.Size
 
 $label = New-Object System.Windows.Forms.label
 $label.Location = New-Object System.Drawing.Size(5,5)

@@ -4,6 +4,7 @@
 
 .References
 http://4sysops.com/archives/remotely-query-user-profile-information-with-powershell/
+http://www.pcreview.co.uk/forums/purpose-state-key-located-users-profiles-t2939114.html
   
 .EXAMPLE
 get_system_info $computers
@@ -53,15 +54,16 @@ Param(
         try {
             $tmpSID = New-Object System.Security.Principal.SecurityIdentifier($i.sid)
             $tmpUsr = $tmpSID.Translate([System.Security.Principal.NTAccount])
+        } catch {
+            $tmpUsr = "LookupFailed"
         }
-        catch {
-            $tmpUsr = New-Object psobject -Property @{Value=""}
-            $tmpUsr.Value = [String]$i.sid
+        try {
+            #ProfileTime Conversion
+            $lut = ([WMI]"").Converttodatetime($i.lastusetime)
+            [String]$lut = $lut |Get-Date -Format 'MM-dd-yyyy'
+        } catch {
+            $lut = [String]"Unknown"
         }
-
-        #ProfileTime Conversion
-        $lut = ([WMI]"").Converttodatetime($i.lastusetime)
-        [String]$lut = $lut |Get-Date -Format 'MM-dd-yyyy'
 
         switch ($i.Status) {
             1 {$status = [string]"Temporary"}
@@ -69,7 +71,7 @@ Param(
             4 {$status = [string]"Mandatory"}
             8 {$status = [string]"Corrupted Local Profile"}
             12 {$status = [string]"Corrupted Roaming Profile"}
-            Default {$status = [string]"Local"}
+            Default {$status = [string]"Unknown"}
         }
            
         $obj | Add-Member -Name "Profile_$($num)_SID" -Value "$($i.SID)" -MemberType NoteProperty
@@ -137,13 +139,62 @@ Param(
 function user_profiles_from_reg {
 Param($computer)    
 
+    $objAry = @() #array for results
     $remoteHive = [Microsoft.Win32.RegistryHive]"LocalMachine"
     $regKey = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey($remoteHive,$computer)
     $profileList = $regKey.OpenSubKey(“SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\”,$true)
     $remoteProfiles = $profileList.GetSubKeyNames()  
     foreach ($p in $remoteProfiles) {
          $thisProfile = $regKey.OpenSubKey(“SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$p”,$true)
+         $special = $thisProfile.Name.Split('\')[-1].Length -lt 45 #make special for systemaccounts
+         $thisObj = New-Object psobject -Property @{
+            SID = $thisProfile.name.Split('\')[-1] #Get the last part of the name as the SID.
+            LocalPath = $thisProfile.GetValue('ProfileImagePath')
+            RoamingPath = $thisProfile.GetValue('CentralProfile')
+            Special = $special
+            LastUseTime = "N/A for xp/2k3"
+            Status = "N/A for xp/2k3"
+         }    
+    $objAry += $thisObj
     }
+    return $objAry
+    <#ToDo: Get info for the status
+001 = PROFILE_MANDATORY
+Profile is mandatory.
+
+002 = PROFILE_USE_CACHE
+Update locally Cached profile.
+
+004 = PROFILE_NEW_LOCAL
+Using a new local profile.
+
+008 = PROFILE_NEW_CENTRAL
+Using a new central profile.
+
+010 = PROFILE_UPDATE_CENTRAL
+Need to update central profile.
+
+020 = PROFILE_DELETE_CACHE
+Need to delete cached profile.
+
+040 = PROFILE_UPGRADE
+Need to upgrade profile.
+
+080 = PROFILE_GUEST_USER
+Using guest user profile.
+
+100 = PROFILE_ADMIN_USER
+Using administrator profile.
+
+200 = DEFAULT_NET_READY
+Default net profile is available & ready.
+
+400 = PROFILE_SLOW_LINK
+Identified slow network link.
+
+800 = PROFILE_TEMP_ASSIGNED
+Temporary profile loaded.
+#>
 }
 
 function get_system_info {
@@ -171,8 +222,9 @@ Param(
             
             if ($osinfo.Version[0] -ne '6') {
                 #call if 2k3 or xp
-                #$profiles = user_profiles_from_reg -computer $c
-                write_log " No profile info for $c 2k3 and XP is not yet supported."
+                $profiles = user_profiles_from_reg -computer $c
+                #write_log " No profile info for $c 2k3 and XP is not yet supported."
+                #$profiles = [string[]]""
             } else {
                 $profiles = Get-WmiObject -Class win32_userprofile -ComputerName $c -ErrorAction Stop -ErrorVariable +wmiError
             }            
