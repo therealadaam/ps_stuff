@@ -39,6 +39,7 @@ Param(
 )
 $results =  @() #array fro results
 foreach ($u in $list) {
+    $uAdsi = [adsi]$u.path
     $props = $u.properties
     $resList = New-Object PsObject -Property @{
         UserName = [string]$props.samaccountname
@@ -46,7 +47,11 @@ foreach ($u in $list) {
         EmailAddresses = [string[]]$props.proxyaddresses
         LastLogin = [datetime]::FromFileTime($($props.lastlogontimestamp)).ToString('MM-dd-yy')
         Description = [string]$props.description
+        ProfilePath = [string]$uAdsi.profilepath
+        UserDrive = [string]$uAdsi.homedirectory
+        UserDriveLetter = [string]$uAdsi.homedrive
     }    
+    $uAdsi.Close() #close the object after we're done with it.
     #loads of fun in this fucker. So because of the way PS handles strings and string arrays,
     #this is the best way I know of to make it one big `n deliminated string
     foreach ($m in $resList.EmailAddresses) {       

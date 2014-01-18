@@ -238,7 +238,7 @@ Param(
                 write_log "Error accessing WMI on $c"
                 write_log $wmiError
                 $wmiError.Clear() #clear erros after writting them
-                if ($system.name -ne $c) { continue } #skip pc if nothing from WMI
+                if ($system.name -ne $c) { continue } #skip pc if nothing basic WMI
             }
 
             $genInfo = New-Object PsObject -Property @{ #new object to Combine everything
